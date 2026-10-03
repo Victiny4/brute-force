@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>brute force robotics</title>
+<link rel="stylesheet" href="styles.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#e8372f">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+<div id="app">
+    <div class="panel">
+
+        <div class="panel-header">
+            <div class="title-row">
+                <span class="accent-bar"></span>
+                <h1>BRUTE FORCE ROBOTICS</h1>
+            </div>
+        </div>
+        <p class="subtitle" id="subtitleText"></p>
+
+        <div id="remoteError" class="error-banner" hidden></div>
+
+        <div class="top-grid">
+            <div class="next-event-card">
+                <div class="panel-label">NEXT EVENT</div>
+                <div class="event-title" id="nextEventTitle">No events yet</div>
+                <div class="event-countdown" id="nextEventCountdown">—</div>
+                <div class="event-date" id="nextEventDate"></div>
+            </div>
+
+            <div class="card queue-card">
+                <div class="panel-label">WHO GETS THE ROBOT NEXT</div>
+                <div id="robotQueue"></div>
+                <div id="robotQueueEmpty" class="empty-note" hidden>No tasks need the robot right now.</div>
+            </div>
+        </div>
+
+        <div class="bottom-grid">
+            <div class="card tasks-card">
+                <div class="panel-label">TASKS</div>
+                <div id="taskRows"></div>
+                <div id="taskEmpty" class="empty-note" hidden>Nothing here.</div>
+            </div>
+
+            <div class="card add-card">
+                <div class="tabgroup" id="addTabs">
+                    <button type="button" data-tab="task" class="active">New task</button>
+                    <button type="button" data-tab="event">New event</button>
+                </div>
+
+                <input type="text" id="addName" placeholder="Your name" class="add-name" hidden>
+
+                <form id="taskForm" class="add-form">
+                    <label for="taskTitle">What needs to get done</label>
+                    <input type="text" id="taskTitle" placeholder="e.g. Finish wiring" required>
+
+                    <div class="form-row">
+                        <div class="field">
+                            <label for="taskTeam">Team</label>
+                            <select id="taskTeam" required></select>
+                        </div>
+                        <div class="field">
+                            <label for="taskHours">Hours it takes</label>
+                            <input type="number" id="taskHours" min="0" step="0.5" placeholder="4">
+                        </div>
+                    </div>
+
+                    <label for="taskDeadline">Deadline</label>
+                    <input type="datetime-local" id="taskDeadline" required>
+
+                    <label class="checkbox-row">
+                        <input type="checkbox" id="taskNeedsRobot">
+                        Needs the robot
+                    </label>
+
+                    <button type="submit" class="add-btn">Add task</button>
+                </form>
+
+                <form id="eventForm" class="add-form" hidden>
+                    <label for="eventTitle">Event name</label>
+                    <input type="text" id="eventTitle" placeholder="e.g. Scrimmage at [host school]" required>
+
+                    <label for="eventDatetime">Date &amp; time</label>
+                    <input type="datetime-local" id="eventDatetime" required>
+
+                    <button type="submit" class="add-btn">Add event</button>
+                </form>
+
+                <div class="panel-label events-label">EVENTS</div>
+                <div id="eventRows"></div>
+                <div id="eventEmpty" class="empty-note" hidden>No upcoming events.</div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="config.js"></script>
+<script src="data-remote.js"></script>
+<script src="app.js"></script>
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+    }
+</script>
+</body>
+</html>
