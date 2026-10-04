@@ -59,19 +59,20 @@
                     <label for="taskTitle">What needs to get done</label>
                     <input type="text" id="taskTitle" placeholder="e.g. Finish wiring" required>
 
+                    <label for="taskTeam">Team</label>
+                    <select id="taskTeam" required></select>
+
+                    <label>Due in</label>
                     <div class="form-row">
                         <div class="field">
-                            <label for="taskTeam">Team</label>
-                            <select id="taskTeam" required></select>
+                            <label for="taskDueHours">Hours</label>
+                            <input type="number" id="taskDueHours" min="0" step="1" placeholder="0">
                         </div>
                         <div class="field">
-                            <label for="taskHours">Hours it takes</label>
-                            <input type="number" id="taskHours" min="0" step="0.5" placeholder="4">
+                            <label for="taskDueMinutes">Minutes</label>
+                            <input type="number" id="taskDueMinutes" min="0" max="59" step="1" placeholder="0">
                         </div>
                     </div>
-
-                    <label for="taskDeadline">Deadline</label>
-                    <input type="datetime-local" id="taskDeadline" required>
 
                     <label class="checkbox-row">
                         <input type="checkbox" id="taskNeedsRobot">
@@ -99,6 +100,8 @@
 
     </div>
 </div>
+
+<div id="credit">made by kyan</div>
 
 <script src="config.js"></script>
 <script src="data-remote.js"></script>

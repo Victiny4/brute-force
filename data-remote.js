@@ -47,7 +47,6 @@ function rowToTask(row) {
         remoteId: row.id,
         title: row.title,
         team: row.team,
-        hours: row.hours,
         deadline: new Date(row.deadline),
         needsRobot: row.needs_robot,
         completed: row.completed,
@@ -83,7 +82,6 @@ async function insertRemoteTask(t) {
         c.from('tasks').insert({
             title: t.title,
             team: t.team,
-            hours: t.hours,
             deadline: t.deadline.toISOString(),
             needs_robot: !!t.needsRobot,
             completed: !!t.completed,

@@ -168,3 +168,9 @@ body {
 @media (max-width:720px) {
     .top-grid, .bottom-grid { grid-template-columns:1fr; }
 }
+
+/* ── credit ─────────────────────────────────────────────────── */
+#credit {
+    position:fixed; right:12px; bottom:10px; font-size:11px; color:#9b998f;
+    pointer-events:none; user-select:none;
+}

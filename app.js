@@ -11,7 +11,7 @@ function loadTasks() {
 }
 function saveTasks() {
     const raw = tasks.filter(t => t.source === 'local').map(t => ({
-        id: t.id, title: t.title, team: t.team, hours: t.hours,
+        id: t.id, title: t.title, team: t.team,
         deadline: t.deadline.toISOString(), needsRobot: t.needsRobot, completed: t.completed,
     }));
     try { localStorage.setItem('robotics-dashboard:tasks', JSON.stringify(raw)); } catch { /* storage unavailable */ }
@@ -114,7 +114,7 @@ function renderRobotQueue() {
         team.textContent = t.team;
         const detail = document.createElement('div');
         detail.className = 'detail';
-        detail.textContent = `${t.title} · ${t.hours != null ? `${t.hours}h of work` : ''}`;
+        detail.textContent = t.title;
         main.appendChild(team);
         main.appendChild(detail);
 
@@ -164,7 +164,7 @@ function renderTasks() {
         title.textContent = t.title;
         const detail = document.createElement('div');
         detail.className = 'detail';
-        detail.textContent = `${t.team} · takes ${t.hours != null ? t.hours : '?'}h${t.needsRobot ? ' · needs robot' : ''}`;
+        detail.textContent = `${t.team}${t.needsRobot ? ' · needs robot' : ''}`;
         main.appendChild(title);
         main.appendChild(detail);
         if (t.addedBy) {
@@ -312,15 +312,17 @@ taskForm.addEventListener('submit', async (e) => {
     const name = addNameInput.value.trim();
     const title = document.getElementById('taskTitle').value.trim();
     const team = taskTeamSelect.value;
-    const hoursStr = document.getElementById('taskHours').value;
-    const deadlineStr = document.getElementById('taskDeadline').value;
+    const dueHoursStr = document.getElementById('taskDueHours').value;
+    const dueMinutesStr = document.getElementById('taskDueMinutes').value;
     const needsRobot = document.getElementById('taskNeedsRobot').checked;
-    if (!title || !team || !deadlineStr) return;
+
+    const dueInMs = (dueHoursStr ? parseFloat(dueHoursStr) : 0) * HOUR
+        + (dueMinutesStr ? parseFloat(dueMinutesStr) : 0) * MINUTE;
+    if (!title || !team || dueInMs <= 0) return;
 
     const newTask = {
         title, team, needsRobot,
-        hours: hoursStr ? parseFloat(hoursStr) : null,
-        deadline: new Date(deadlineStr),
+        deadline: new Date(Date.now() + dueInMs),
         completed: false,
     };
 
