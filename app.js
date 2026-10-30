@@ -263,6 +263,106 @@ function renderAll() {
     renderEvents();
 }
 
+/* ── 20-minute warning notifications ───────────────────────── */
+const WARN_BEFORE = 20 * MINUTE;
+const NOTIFY_SUPPORTED = 'Notification' in window;
+
+function loadNotified() {
+    try { return new Set(JSON.parse(localStorage.getItem('robotics-dashboard:notified') || '[]')); }
+    catch { return new Set(); }
+}
+const notified = loadNotified();
+function saveNotified() {
+    // Forget ids for tasks that no longer exist so the list doesn't grow forever.
+    const live = new Set(tasks.map(t => t.id));
+    for (const id of notified) if (!live.has(id)) notified.delete(id);
+    try { localStorage.setItem('robotics-dashboard:notified', JSON.stringify([...notified])); } catch { /* ignore */ }
+}
+
+// Phone notifications: when this device is subscribed, Supabase sends the
+// 20-minute reminders itself (even with the dashboard closed), so the
+// in-page check below stands down to avoid doubles.
+const PUSH_CONFIGURED = REMOTE_ON && typeof VAPID_PUBLIC_KEY !== 'undefined' && !!VAPID_PUBLIC_KEY
+    && 'serviceWorker' in navigator && 'PushManager' in window;
+let pushActive = false;
+
+function urlBase64ToUint8Array(base64) {
+    const padded = (base64 + '='.repeat((4 - base64.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/');
+    return Uint8Array.from(atob(padded), c => c.charCodeAt(0));
+}
+
+async function subscribePush() {
+    if (!PUSH_CONFIGURED || Notification.permission !== 'granted') return;
+    try {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+        await saveRemotePushSubscription(sub);
+        pushActive = true;
+    } catch (err) {
+        console.error('Could not turn on phone notifications:', err);
+    }
+    updateNotifyBtn();
+}
+
+async function showNotification(title, body, tag) {
+    const opts = { body, icon: 'icon-192.png', tag };
+    // Service worker notifications also work when installed as an app on phones.
+    try {
+        const reg = 'serviceWorker' in navigator && await navigator.serviceWorker.getRegistration();
+        if (reg) return reg.showNotification(title, opts);
+    } catch { /* fall through */ }
+    new Notification(title, opts);
+}
+
+function checkTaskWarnings() {
+    if (pushActive || !NOTIFY_SUPPORTED || Notification.permission !== 'granted') return;
+    const now = Date.now();
+    let changed = false;
+    for (const t of tasks) {
+        if (t.completed || notified.has(t.id)) continue;
+        const left = t.deadline.getTime() - now;
+        if (left > 0 && left <= WARN_BEFORE) {
+            notified.add(t.id);
+            changed = true;
+            showNotification(`${t.title} — ${Math.ceil(left / MINUTE)} min left`, `${t.team}${t.needsRobot ? ' · needs robot' : ''}`, `task-${t.id}`);
+        }
+    }
+    if (changed) saveNotified();
+}
+
+const notifyBtn = document.getElementById('notifyBtn');
+const alertsEnableBtn = document.getElementById('alertsEnableBtn');
+const alertsStatus = document.getElementById('alertsStatus');
+function updateNotifyBtn() {
+    const canAsk = NOTIFY_SUPPORTED && Notification.permission === 'default';
+    notifyBtn.hidden = !canAsk;
+    alertsEnableBtn.hidden = !canAsk;
+    if (!NOTIFY_SUPPORTED) {
+        alertsStatus.textContent = 'Not supported here (on iPhone, open it from your Home Screen)';
+    } else if (Notification.permission === 'denied') {
+        alertsStatus.textContent = 'Blocked — allow notifications for this site in your browser settings';
+    } else if (Notification.permission === 'default') {
+        alertsStatus.textContent = 'Off';
+    } else if (pushActive) {
+        alertsStatus.textContent = 'On — even when the dashboard is closed';
+    } else {
+        alertsStatus.textContent = 'On — only while the dashboard is open';
+    }
+}
+async function enableAlerts() {
+    await Notification.requestPermission();
+    updateNotifyBtn();
+    await subscribePush();
+    checkTaskWarnings();
+}
+notifyBtn.addEventListener('click', enableAlerts);
+alertsEnableBtn.addEventListener('click', enableAlerts);
+updateNotifyBtn();
+subscribePush();
+
 /* ── remote sync ───────────────────────────────────────────── */
 function showRemoteError(message) {
     const el = document.getElementById('remoteError');
@@ -292,11 +392,14 @@ for (const team of TEAMS) {
 
 const taskForm = document.getElementById('taskForm');
 const eventForm = document.getElementById('eventForm');
+const alertsInfo = document.getElementById('alertsInfo');
 document.querySelectorAll('#addTabs button').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('#addTabs button').forEach(b => b.classList.toggle('active', b === btn));
         taskForm.hidden = btn.dataset.tab !== 'task';
         eventForm.hidden = btn.dataset.tab !== 'event';
+        alertsInfo.hidden = btn.dataset.tab !== 'alerts';
+        addNameInput.hidden = !REMOTE_ON || btn.dataset.tab === 'alerts';
     });
 });
 
@@ -388,4 +491,4 @@ if (REMOTE_ON) {
 } else {
     renderAll();
 }
-setInterval(renderAll, 1000);
+setInterval(() => { renderAll(); checkTaskWarnings(); }, 1000);

@@ -143,6 +143,20 @@ async function deleteRemoteEvent(remoteId) {
     if (error) throw new Error(error.message);
 }
 
+/* ── push subscriptions ───────────────────────────────────────── */
+async function saveRemotePushSubscription(sub) {
+    const c = await getClient();
+    const json = sub.toJSON();
+    const { error } = await withTimeout(
+        c.from('push_subscriptions').upsert(
+            { endpoint: json.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth },
+            { onConflict: 'endpoint', ignoreDuplicates: true },
+        ),
+        REQUEST_TIMEOUT_MS, TIMEOUT_MESSAGE,
+    );
+    if (error) throw new Error(error.message);
+}
+
 // Calls onChange whenever anyone (including this tab) adds/edits/removes a
 // row in either table.
 async function subscribeRemote(onChange) {

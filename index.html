@@ -20,6 +20,7 @@
                 <span class="accent-bar"></span>
                 <h1>BRUTE FORCE ROBOTICS</h1>
             </div>
+            <button type="button" id="notifyBtn" class="notify-btn" hidden>🔔 Enable alerts</button>
         </div>
         <p class="subtitle" id="subtitleText"></p>
 
@@ -51,6 +52,7 @@
                 <div class="tabgroup" id="addTabs">
                     <button type="button" data-tab="task" class="active">New task</button>
                     <button type="button" data-tab="event">New event</button>
+                    <button type="button" data-tab="alerts">Alerts</button>
                 </div>
 
                 <input type="text" id="addName" placeholder="Your name" class="add-name" hidden>
@@ -91,6 +93,19 @@
 
                     <button type="submit" class="add-btn">Add event</button>
                 </form>
+
+                <div id="alertsInfo" class="alerts-info" hidden>
+                    <p class="alerts-status">This device: <strong id="alertsStatus">Off</strong></p>
+                    <p><strong>What it does:</strong> sends a reminder to your phone or computer when a task has <strong>20 minutes left</strong>.</p>
+                    <ul>
+                        <li>Works even when the dashboard is closed or your phone is locked.</li>
+                        <li>If your phone is off, the reminder shows up when you turn it back on (as long as the task isn't past its deadline yet).</li>
+                        <li>You get one reminder per task. Tasks marked done don't send one.</li>
+                    </ul>
+                    <p><strong>To turn it on:</strong> tap the button below and choose <em>Allow</em>.</p>
+                    <p><strong>iPhone:</strong> first add this page to your Home Screen (Share → Add to Home Screen), then open it from there.</p>
+                    <button type="button" id="alertsEnableBtn" class="add-btn" hidden>🔔 Enable alerts</button>
+                </div>
 
                 <div class="panel-label events-label">EVENTS</div>
                 <div id="eventRows"></div>

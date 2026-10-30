@@ -27,6 +27,27 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
+// 20-minute task reminders sent by the Supabase "task-alerts" function.
+self.addEventListener('push', (event) => {
+    const data = event.data ? event.data.json() : {};
+    event.waitUntil(self.registration.showNotification(data.title || 'Task reminder', {
+        body: data.body || '',
+        tag: data.tag,
+        icon: 'icon-192.png',
+    }));
+});
+
+// Tapping a reminder opens the dashboard (or focuses it if already open).
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+            if (windows.length) return windows[0].focus();
+            return self.clients.openWindow('./');
+        })
+    );
+});
+
 // App shell files: network-first, so an online visit always gets the latest
 // deployed code; only falls back to the last cached copy when offline.
 // Everything else (e.g. Supabase requests) just goes to the network as normal.

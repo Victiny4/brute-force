@@ -112,6 +112,69 @@ can happen after a failed first attempt). Fix it with a clean reset:
 one — it's a blunt fix, but the reliable one when Chrome thinks an app
 is installed and Android disagrees.)
 
+## 6. Phone notifications (optional)
+
+This makes Supabase send a reminder to everyone's phone when a task has 20
+minutes left, even when the dashboard is closed. About 10 minutes.
+
+**a. Add two things to the database.** SQL Editor → New query → paste → Run:
+
+```sql
+alter table tasks add column warned boolean not null default false;
+
+create table push_subscriptions (
+    endpoint text primary key,
+    p256dh text not null,
+    auth text not null,
+    created_at timestamptz not null default now()
+);
+alter table push_subscriptions enable row level security;
+create policy "public insert" on push_subscriptions for insert with check (true);
+```
+
+**b. Make a key pair.** On your computer, open a terminal and run:
+
+```
+npx web-push generate-vapid-keys
+```
+
+It prints a **Public Key** and a **Private Key**. Keep this window open.
+
+**c. Put the public key in `config.js`:**
+
+```js
+const VAPID_PUBLIC_KEY = 'paste the Public Key here';
+```
+
+The private key must **never** go in `config.js` — it goes in Supabase only (next step).
+
+**d. Save the keys in Supabase.** Left sidebar → **Edge Functions** →
+**Secrets** → add these three:
+
+| Name | Value |
+|---|---|
+| `VAPID_PUBLIC_KEY` | the Public Key |
+| `VAPID_PRIVATE_KEY` | the Private Key |
+| `VAPID_SUBJECT` | `mailto:` followed by your email, e.g. `mailto:coach@example.com` |
+
+**e. Add the reminder function.** **Edge Functions** → **Deploy a new
+function** → **Via Editor**. Name it `task-alerts`, delete the sample code,
+paste in everything from `supabase/functions/task-alerts/index.ts` (in this
+folder), and click **Deploy**. Then open the function's **Details** and turn
+**off** "Verify JWT" (so the scheduler in the next step can call it) → **Save**.
+
+**f. Run it every minute.** Left sidebar → **Integrations** → **Cron** (turn it
+on if asked) → **Create job**:
+- Name: `task-alerts`
+- Schedule: `* * * * *` (every minute)
+- Type: **Supabase Edge Function**, method **POST**, function `task-alerts`
+- Click **Create**.
+
+**g. Upload the changed files** (`config.js`, `app.js`, `index.html`,
+`styles.css`, `data-remote.js`, `sw.js`) to GitHub. Then on each phone, open
+the dashboard → **Alerts** tab → **Enable alerts** → **Allow**. The tab should
+say "On — even when the dashboard is closed".
+
 ---
 
 **Security note:** anyone with the link can read, add, edit, or delete
